@@ -1,35 +1,38 @@
-// Declare the chart dimensions and margins.
-const width = 640;
-const height = 400;
-const marginTop = 20;
-const marginRight = 20;
-const marginBottom = 30;
-const marginLeft = 40;
+async function draw() {
+    const dataset = await d3.json('data.json')
 
-// Declare the x (horizontal position) scale.
-const x = d3.scaleUtc()
-    .domain([new Date("2023-01-01"), new Date("2024-01-01")])
-    .range([marginLeft, width - marginRight]);
+    let dimensions = {
+        width: 800,
+        height: 800,
+        // add margins
+        // using 50 we don't have to worry about shaped that are smaller than 50 px
+        margin: {
+            top: 50,
+            bottom: 50,
+            left: 50,
+            right: 50
+        }
+    }
 
-// Declare the y (vertical position) scale.
-const y = d3.scaleLinear()
-    .domain([0, 100])
-    .range([height - marginBottom, marginTop]);
+    const svg = d3.select('#chart')
+        .append('svg')
+        .attr('width', dimensions.width)
+        .attr('height', dimensions.height)
 
-// Create the SVG container.
-const svg = d3.create("svg")
-    .attr("width", width)
-    .attr("height", height);
+        // add group
+        // we can then apply properties the group
+        // which will affect all children
+        // But g doesn't accept x and y attributes
+    const ctr = svg.append('g')
+        // We can use transform instead of x and y
+        // Works like CSS
+        // Could also be used as "style"
+        .attr(
+            'transform',
+            `translate(${dimensions.margin.left}, ${dimensions.margin.top})`)
 
-// Add the x-axis.
-svg.append("g")
-    .attr("transform", `translate(0,${height - marginBottom})`)
-    .call(d3.axisBottom(x));
+    ctr.append('circle')
+        .attr('r', 15)
+}
 
-// Add the y-axis.
-svg.append("g")
-    .attr("transform", `translate(${marginLeft},0)`)
-    .call(d3.axisLeft(y));
-
-// Append the SVG element.
-container.append(svg.node());
+draw()
