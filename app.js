@@ -1,82 +1,45 @@
-async function draw() {
-    const dataset = await d3.json('data.json')
-    const xAccessor = (d) => d.currently.humidity;
-    const yAccessor = (d) => d.currently.apparentTemperature;
+async function draw(el, scale) {
+  const dataset = await d3.json('data.json')
 
-    let dimensions = {
-        width: 800,
-        height: 800,
-        margin: {
-            top: 50,
-            bottom: 50,
-            left: 50,
-            right: 50
-        }
-    }
+  // Sort data after fetching it
+  // Will sort the array in ascending order
+  dataset.sort((a, b) => a - b)
 
-    dimensions.ctrWidth= dimensions.width - dimensions.margin.left - dimensions.margin.right;
-    dimensions.ctrHeight= dimensions.height - dimensions.margin.top - dimensions.margin.bottom;
+  // Dimensions
+  let dimensions = {
+    width: 600,
+    height: 150,
+  };
 
-    const svg = d3.select('#chart')
-        .append('svg')
-        .attr('width', dimensions.width)
-        .attr('height', dimensions.height)
+  const box = 30;
 
-    const ctr = svg.append('g')
-        .attr(
-            'transform',
-            `translate(${dimensions.margin.left}, ${dimensions.margin.top})`)
+  // Draw Image
+  const svg = d3.select(el)
+    .append("svg")
+    .attr("width", dimensions.width)
+    .attr("height", dimensions.height)
 
-    // Scales
-    const xScale = d3.scaleLinear()
-        .domain(d3.extent(dataset, xAccessor))
-        .rangeRound([0, dimensions.ctrWidth])
-        .clamp(true)
-    const yScale = d3.scaleLinear()
-        .domain(d3.extent(dataset, yAccessor))
-        .rangeRound([dimensions.ctrHeight, 0])
-        .nice()
-        .clamp(true)
+  // Scales
+  let colorScale;
 
-    // Draw circles
-    ctr.selectAll('circle')
-        .data(dataset)
-        .join('circle')
-        .attr('cx', d => xScale(xAccessor(d)))
-        .attr('cy', d => yScale(yAccessor(d)))
-        .attr('r', 5)
-        .attr('fill', 'red')
-        .attr('data-temp', yAccessor)
+  if (scale === 'linear') {
+    colorScale = d3.scaleLinear()
+      .domain(d3.extent(dataset))
+      .range(['white', 'red'])
+  }
 
-    // Axes
-    const xAxis = d3.axisBottom(xScale)
-        .ticks(5)
-        .tickFormat((d) => d * 100 + '%')
-
-    const yAxis = d3.axisLeft(yScale)
-
-    const xAxisGroup = ctr.append('g')
-        .call(xAxis)
-        .style('transform', `translateY(${dimensions.ctrHeight}px)`)
-        .classed('axis', true)
-
-    xAxisGroup.append('text')
-        .attr('x', dimensions.ctrWidth / 2)
-        .attr('y', dimensions.margin.bottom - 10)
-        .attr('fill', 'black')
-        .text('Humidity')
-
-    const yAxisGroup = ctr.append('g')
-        .call(yAxis)
-        .classed('axis', true)
-
-    yAxisGroup.append('text')
-        .style('transform', `rotate(270deg)`)
-        .attr('x', -dimensions.ctrHeight / 2)
-        .attr('y', -dimensions.margin.left + 15)
-        .attr('fill', 'black')
-        .html('Apparent Temperature &deg; F')
-        .style('text-anchor', 'middle')
+  // Rectangles
+  svg.append('g')
+    .attr('transform', 'translate(2, 2)')
+    .attr('stroke', 'black')
+    .selectAll('rect')
+    .data(dataset)
+    .join('rect')
+    .attr('width', box - 3)
+    .attr('height', box - 3)
+    .attr('x', (d, i) => box * (i % 20))
+    .attr('y', (d, i) => box * ((i / 20) | 0))
+    .attr('fill', (d) => colorScale(d))
 }
 
-draw()
+draw('#heatmap1', 'linear')
