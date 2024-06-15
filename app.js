@@ -1,63 +1,64 @@
-async function draw(el, scale) {
+async function draw() {
+  // Data
   const dataset = await d3.json('data.json')
-  dataset.sort((a, b) => a - b)
+
+  const sizeAccessor = (d) => d.size
+  const nameAccessor = (d) => d.name
 
   // Dimensions
   let dimensions = {
-    width: 600,
-    height: 150,
+    width: 200,
+    height: 500,
+    margin: 50
   };
 
-  const box = 30;
-
   // Draw Image
-  const svg = d3.select(el)
+  const svg = d3.select('#chart')
     .append("svg")
     .attr("width", dimensions.width)
     .attr("height", dimensions.height)
 
-  // Scales
-  let colorScale;
+  // Create scale
+  const universeScale = d3.scaleLog()
+    .domain(d3.extent(dataset, sizeAccessor))
+    .range([
+      dimensions.height - dimensions.margin,
+      dimensions.margin
+    ])
 
-  if (scale === 'linear') {
-    colorScale = d3.scaleLinear()
-      .domain(d3.extent(dataset))
-      .range(['white', 'red'])
-  } else if (scale === 'quantize') {
-    colorScale = d3.scaleQuantize()
-      .domain(d3.extent(dataset))
-      .range(['white', 'pink', 'red'])
-  } else if (scale === 'quantile') {
-    colorScale = d3.scaleQuantile()
-      .domain(dataset)
-      .range(['white', 'pink', 'red'])
+  // draw circles
+  const circlesGroup = svg.append('g')
+    
+    // Apply styling changes
+    .style('font-size', '16px')
 
-    // add threshold scale
-  } else if (scale === 'threshold') {
-    colorScale = d3.scaleThreshold()
+    // Align circles and text
+    .style('dominant-baseline', 'middle')
 
-      // Here we pass the thresholds we want to use
-      .domain([45200, 135600])
-      .range(['white', 'pink', 'red'])
-  }
-
-  // Rectangles
-  svg.append('g')
-    .attr('transform', 'translate(2, 2)')
-    .attr('stroke', 'black')
-    .selectAll('rect')
+  circlesGroup.selectAll('circle')
     .data(dataset)
-    .join('rect')
-    .attr('width', box - 3)
-    .attr('height', box - 3)
-    .attr('x', (d, i) => box * (i % 20))
-    .attr('y', (d, i) => box * ((i / 20) | 0))
-    .attr('fill', (d) => colorScale(d))
+    .join('circle')
+    .attr('cx', dimensions.margin)
+    .attr('cy', d => universeScale(sizeAccessor(d)))
+    .attr('r', 6)
+
+  circlesGroup.selectAll('text')
+    .data(dataset)
+    .join('text')
+    .attr('x', dimensions.margin + 15)
+    .attr('y', d => universeScale(sizeAccessor(d)))
+    .text(nameAccessor)
+
+  // Add axis to show the values
+  const axis = d3.axisLeft(universeScale)
+
+  svg.append('g')
+
+    // Move axis to the right before drawing it
+    .attr('transform', `translate(${dimensions.margin}, 0)`)
+
+    // Then call axis function
+    .call(axis)
 }
 
-draw('#heatmap1', 'linear')
-draw('#heatmap2', 'quantize')
-draw('#heatmap3', 'quantile')
-
-// update scale
-draw('#heatmap4', 'threshold')
+draw()
